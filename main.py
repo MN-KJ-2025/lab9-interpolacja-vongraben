@@ -18,7 +18,12 @@ def chebyshev_nodes(n: int = 10) -> np.ndarray | None:
         (np.ndarray): Wektor węzłów Czebyszewa (n,).
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    if not isinstance(n, int) or n < 2:
+        return None
+
+    k = np.arange(n, dtype=float)
+    nodes = np.cos(np.pi * k / (n - 1))
+    return nodes
 
 
 def bar_cheb_weights(n: int = 10) -> np.ndarray | None:
@@ -31,7 +36,13 @@ def bar_cheb_weights(n: int = 10) -> np.ndarray | None:
         (np.ndarray): Wektor wag dla węzłów Czebyszewa (n,).
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    if not isinstance(n, int) or n < 2:
+        return None
+
+    weights = (-1.0) ** np.arange(n, dtype=float)
+    weights[0] = 0.5
+    weights[-1] = 0.5 * ((-1.0) ** (n - 1))
+    return weights
 
 
 def barycentric_inte(
@@ -52,7 +63,39 @@ def barycentric_inte(
         (np.ndarray): Wektor wartości funkcji interpolującej (n,).
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    try:
+        xi = np.asarray(xi, dtype=float)
+        yi = np.asarray(yi, dtype=float)
+        wi = np.asarray(wi, dtype=float)
+        x = np.asarray(x, dtype=float)
+    except (TypeError, ValueError):
+        return None
+
+    if (
+        xi.ndim != 1
+        or yi.ndim != 1
+        or wi.ndim != 1
+        or x.ndim != 1
+        or len(xi) != len(yi)
+        or len(xi) != len(wi)
+        or len(xi) < 2
+    ):
+        return None
+
+    result = np.empty_like(x, dtype=float)
+
+    for idx, xv in enumerate(x):
+        diff = xv - xi
+        zero_mask = np.isclose(diff, 0.0)
+
+        if np.any(zero_mask):
+            result[idx] = yi[zero_mask][0]
+            continue
+
+        tmp = wi / diff
+        result[idx] = np.sum(tmp * yi) / np.sum(tmp)
+
+    return result
 
 
 def L_inf(
@@ -71,4 +114,14 @@ def L_inf(
         (float): Wartość normy L-nieskończoność.
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    try:
+        xr_arr = np.asarray(xr, dtype=float)
+        x_arr = np.asarray(x, dtype=float)
+    except (TypeError, ValueError):
+        return None
+
+    if xr_arr.shape != x_arr.shape:
+        return None
+
+    diff = np.abs(xr_arr - x_arr)
+    return float(np.max(diff))
